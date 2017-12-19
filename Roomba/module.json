@@ -1,0 +1,14 @@
+{
+    "id": "{DC1BA7D7-569F-4818-BCBD-E1E09B6C8560}",
+    "name": "Roomba",
+    "type": 3,
+    "vendor": "iRobot",
+    "aliases":
+    [
+        "Roomba980"
+    ],  
+    "parentRequirements": [],
+    "childRequirements": [],
+    "implemented": [],
+    "prefix": "ROOMBA"
+}

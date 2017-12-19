@@ -1,0 +1,22 @@
+{
+	"translations": {
+		"de": {
+            "not available": "nicht vorhanden",
+            "empty": "leer",
+            "full": "voll",
+            "unknown": "unbekannt",
+            "stopped": "gestoppt",
+            "charging": "lädt",
+            "running": "läuft",
+            "to base": "zur Base",
+            "Ready": "Bereit",
+            "No Bin": "kein Auffangbehälter",
+            "StandBy": "StandBy",
+            "Control": "Steuerung",
+            "Battery": "Batterie",
+            "Bin": "Auffangbehälter",
+            "Mission": "Aufgabe",
+            "State": "Status"
+		}
+	}
+}
