@@ -27,14 +27,14 @@ class Roomba extends IPSModule {
 		$this->RegisterPropertyString("Password", "");
 	
 		//Timer
-		$this->RegisterTimer("Update", 600000, 'ROOMBA_Update($_IPS[\'TARGET\']);');
+		$this->RegisterTimer("UpdateTimer", 60000, 'ROOMBA_Update($_IPS[\'TARGET\']);');
 	
 		//Variablenprofile
 		//Bin
 		if(!IPS_VariableProfileExists("ROOMBA.Bin")) {
 			IPS_CreateVariableProfile("ROOMBA.Bin", 1);
 			IPS_SetVariableProfileValues("ROOMBA.Bin", 0, 2, 1);
-			IPS_SetVariableProfileIcon("ROOMBA.MissionState", "Recycling");
+			IPS_SetVariableProfileIcon("ROOMBA.Bin", "Recycling");
 			IPS_SetVariableProfileAssociation("ROOMBA.Bin", 0, $this->Translate("not available"), "", 0xC0C0C0);
 			IPS_SetVariableProfileAssociation("ROOMBA.Bin", 1, $this->Translate("empty"), "", 0x00FF00);
 			IPS_SetVariableProfileAssociation("ROOMBA.Bin", 2, $this->Translate("full"), "", 0xFF0000);
@@ -67,11 +67,11 @@ class Roomba extends IPSModule {
 			IPS_CreateVariableProfile("ROOMBA.Control", 1);
 			IPS_SetVariableProfileValues("ROOMBA.Control", 0, 0, 0);
 			IPS_SetVariableProfileIcon("ROOMBA.Control", "Script");
-			IPS_SetVariableProfileAssociation("ROOMBA.Control", 1, $this->Translate("dock"), "", NULL);
-			IPS_SetVariableProfileAssociation("ROOMBA.Control", 2, $this->Translate("start"), "", NULL);
-			IPS_SetVariableProfileAssociation("ROOMBA.Control", 3, $this->Translate("stop"), "", NULL);
-			IPS_SetVariableProfileAssociation("ROOMBA.Control", 4, $this->Translate("pause"), "", NULL);
-			IPS_SetVariableProfileAssociation("ROOMBA.Control", 5, $this->Translate("resume"), "", NULL);
+			IPS_SetVariableProfileAssociation("ROOMBA.Control", 1, $this->Translate("dock"), "", -1);
+			IPS_SetVariableProfileAssociation("ROOMBA.Control", 2, $this->Translate("start"), "", -1);
+			IPS_SetVariableProfileAssociation("ROOMBA.Control", 3, $this->Translate("stop"), "", -1);
+			IPS_SetVariableProfileAssociation("ROOMBA.Control", 4, $this->Translate("pause"), "", -1);
+			IPS_SetVariableProfileAssociation("ROOMBA.Control", 5, $this->Translate("resume"), "", -1);
 		}
 	
 		$batPct = $this->RegisterVariableInteger("BatPct", $this->Translate("Battery"), "~Battery.100");
