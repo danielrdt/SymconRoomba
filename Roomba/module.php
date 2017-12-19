@@ -4,6 +4,8 @@ require_once('roomba.php');
 // Klassendefinition
 class Roomba extends IPSModule {
 
+	private $roomba = NULL;
+
 	// Der Konstruktor des Moduls
 	// Überschreibt den Standard Kontruktor von IPS
 	public function __construct($InstanceID) {
@@ -117,8 +119,6 @@ class Roomba extends IPSModule {
 				throw new Exception($this->Translate("Invalid Ident"));
 		}
 	}
-
-	$roomba = NULL;
 
 	private function Connect($needValues) {
 		$this->roomba = new RoombaConnector($this->ReadPropertyString('Address'), $this->ReadPropertyString('Username'), $this->ReadPropertyString('Password'), $needValues);
