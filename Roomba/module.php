@@ -280,7 +280,7 @@ class Roomba extends IPSModule {
 				(GetValueInteger($this->GetIDForIdent('LastAutostart')) + ($this->ReadPropertyInteger('TimeBetweenMission') * 3600)) < time()){
 				//Zeit zwischen Reinigung min. Stunden x 3600 Sek Sek
 		
-				$roomba->Start();
+				$this->roomba->Start();
 				SetValueInteger($this->GetIDForIdent('LastAutostart'), time());
 			}
 
