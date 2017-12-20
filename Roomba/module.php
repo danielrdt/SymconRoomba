@@ -28,7 +28,7 @@ class Roomba extends IPSModule {
 		$this->RegisterPropertyString("Password", "");
 
 		$this->RegisterPropertyBoolean("AutomaticUpdate", False);
-		$this->RegisterPropertyInteger("UpdateInterval", 60);
+		$this->RegisterPropertyInteger("UpdateInterval", 5);
 		$this->RegisterPropertyInteger("TimeBetweenMission", 36);
 
 		$this->RegisterPropertyString("PresenceVariable", "");
@@ -117,20 +117,28 @@ class Roomba extends IPSModule {
 			IPS_SetEventScheduleGroup($evt, 5, 16);
 			IPS_SetEventScheduleGroup($evt, 6, 32);
 			IPS_SetEventScheduleGroup($evt, 7, 64);
-			IPS_SetEventScheduleGroupPoint($evt, 1, 1, 8, 0, 0, 1);
-			IPS_SetEventScheduleGroupPoint($evt, 1, 2, 18, 0, 0, 2);
-			IPS_SetEventScheduleGroupPoint($evt, 2, 1, 8, 0, 0, 1);
-			IPS_SetEventScheduleGroupPoint($evt, 2, 2, 18, 0, 0, 2);
-			IPS_SetEventScheduleGroupPoint($evt, 3, 1, 8, 0, 0, 1);
-			IPS_SetEventScheduleGroupPoint($evt, 3, 2, 18, 0, 0, 2);
-			IPS_SetEventScheduleGroupPoint($evt, 4, 1, 8, 0, 0, 1);
-			IPS_SetEventScheduleGroupPoint($evt, 4, 2, 18, 0, 0, 2);
-			IPS_SetEventScheduleGroupPoint($evt, 5, 1, 8, 0, 0, 1);
-			IPS_SetEventScheduleGroupPoint($evt, 5, 2, 18, 0, 0, 2);
-			IPS_SetEventScheduleGroupPoint($evt, 6, 1, 8, 0, 0, 1);
-			IPS_SetEventScheduleGroupPoint($evt, 6, 2, 18, 0, 0, 2);
-			IPS_SetEventScheduleGroupPoint($evt, 7, 1, 8, 0, 0, 1);
-			IPS_SetEventScheduleGroupPoint($evt, 7, 2, 18, 0, 0, 2);
+			IPS_SetEventScheduleGroupPoint($evt, 1, 1, 0, 0, 0, 2);
+			IPS_SetEventScheduleGroupPoint($evt, 1, 2, 8, 0, 0, 1);
+			IPS_SetEventScheduleGroupPoint($evt, 1, 3, 18, 0, 0, 2);
+			IPS_SetEventScheduleGroupPoint($evt, 2, 1, 0, 0, 0, 2);
+			IPS_SetEventScheduleGroupPoint($evt, 2, 2, 8, 0, 0, 1);
+			IPS_SetEventScheduleGroupPoint($evt, 2, 3, 18, 0, 0, 2);
+			IPS_SetEventScheduleGroupPoint($evt, 3, 1, 0, 0, 0, 2);
+			IPS_SetEventScheduleGroupPoint($evt, 3, 2, 8, 0, 0, 1);
+			IPS_SetEventScheduleGroupPoint($evt, 3, 3, 18, 0, 0, 2);
+			IPS_SetEventScheduleGroupPoint($evt, 4, 1, 0, 0, 0, 2);
+			IPS_SetEventScheduleGroupPoint($evt, 4, 2, 8, 0, 0, 1);
+			IPS_SetEventScheduleGroupPoint($evt, 4, 3, 18, 0, 0, 2);
+			IPS_SetEventScheduleGroupPoint($evt, 5, 1, 0, 0, 0, 2);
+			IPS_SetEventScheduleGroupPoint($evt, 5, 2, 8, 0, 0, 1);
+			IPS_SetEventScheduleGroupPoint($evt, 5, 3, 18, 0, 0, 2);
+			IPS_SetEventScheduleGroupPoint($evt, 6, 1, 0, 0, 0, 2);
+			IPS_SetEventScheduleGroupPoint($evt, 6, 2, 8, 0, 0, 1);
+			IPS_SetEventScheduleGroupPoint($evt, 6, 3, 18, 0, 0, 2);
+			IPS_SetEventScheduleGroupPoint($evt, 7, 1, 0, 0, 0, 2);
+			IPS_SetEventScheduleGroupPoint($evt, 7, 2, 8, 0, 0, 1);
+			IPS_SetEventScheduleGroupPoint($evt, 7, 3, 18, 0, 0, 2);
+			IPS_SetEventActive($evt, true);
 		}
 	}
 
