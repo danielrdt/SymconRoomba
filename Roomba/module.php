@@ -108,8 +108,8 @@ class Roomba extends IPSModule {
 			$evt = IPS_CreateEvent(2);
 			IPS_SetName($evt, $this->Translate("Schedule"));
 			IPS_SetParent($evt, $this->insId);
-			IPS_SetEventScheduleAction($evt, 1, $this->Translate("unlocked"), 0x00FF00, "SetVariableBoolean($cbsVar, true);");
-			IPS_SetEventScheduleAction($evt, 2, $this->Translate("locked"), 0xFF0000, "SetVariableBoolean($cbsVar, false);");
+			IPS_SetEventScheduleAction($evt, 1, $this->Translate("unlocked"), 0x00FF00, "SetValueBoolean($cbsVar, true);");
+			IPS_SetEventScheduleAction($evt, 2, $this->Translate("locked"), 0xFF0000, "SetValueBoolean($cbsVar, false);");
 			IPS_SetEventScheduleGroup($evt, 1, 1);
 			IPS_SetEventScheduleGroup($evt, 2, 2);
 			IPS_SetEventScheduleGroup($evt, 3, 4);
