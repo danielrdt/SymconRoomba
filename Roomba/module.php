@@ -104,7 +104,7 @@ class Roomba extends IPSModule {
 		IPS_SetHidden($cbsVar, true);
 
 		//Zeitplan erstellen
-		if(IPS_GetEventIDByName($this->Translate("Schedule"), $this->insId) === false){
+		if(@IPS_GetEventIDByName($this->Translate("Schedule"), $this->insId) === false){
 			$evt = IPS_CreateEvent(2);
 			IPS_SetName($evt, $this->Translate("Schedule"));
 			IPS_SetParent($evt, $this->insId);
