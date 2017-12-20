@@ -9,3 +9,6 @@ Current Features:
 - A Weekly Schedule to define Time Ranges to start (in Respect to optional Presence Variable and minimum Time between Missions)
 
 For Username and Password of Roomba you should look at https://github.com/koalazak/dorita980. Maybe I integrate it later directly into the Module.
+
+Copyright Information:
+MQTT Library: Copyright (c) 2013 - 2016, sskaje (https://sskaje.me/)
