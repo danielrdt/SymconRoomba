@@ -266,7 +266,7 @@ class Roomba extends IPSModule {
 				'dock'
 			]);
 
-			$presence = true;
+			$presence = false;
 			$presenceId = $this->ReadPropertyString('PresenceVariable');
 			if($presenceId !== "" && IPS_VariableExists($presenceId)){
 				$presence = GetValueBoolean($presenceId);
