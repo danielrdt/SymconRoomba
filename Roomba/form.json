@@ -1,8 +1,0 @@
-{
-    "elements":
-    [
-        { "type": "ValidationTextBox", "name": "Address", "caption": "Address" },
-        { "type": "ValidationTextBox", "name": "Username", "caption": "Username" },
-        { "type": "ValidationTextBox", "name": "Password", "caption": "Password" }
-    ]
-}

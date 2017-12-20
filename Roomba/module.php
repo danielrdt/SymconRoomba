@@ -5,14 +5,15 @@ require_once('roomba.php');
 class Roomba extends IPSModule {
 
 	private $roomba = NULL;
+	private $insId = 0;
 
 	// Der Konstruktor des Moduls
 	// Überschreibt den Standard Kontruktor von IPS
 	public function __construct($InstanceID) {
 		// Diese Zeile nicht löschen
 		parent::__construct($InstanceID);
-
 		// Selbsterstellter Code
+		$this->insId = $InstanceID;
 	}
 
 	// Überschreibt die interne IPS_Create($id) Funktion
@@ -25,9 +26,15 @@ class Roomba extends IPSModule {
 		$this->RegisterPropertyString("Address", "");
 		$this->RegisterPropertyString("Username", "");
 		$this->RegisterPropertyString("Password", "");
+
+		$this->RegisterPropertyBoolean("AutomaticUpdate", False);
+		$this->RegisterPropertyInteger("UpdateInterval", 60);
+		$this->RegisterPropertyInteger("TimeBetweenMission", 36);
+
+		$this->RegisterPropertyString("PresenceVariable", "");
 	
 		//Timer
-		$this->RegisterTimer("UpdateTimer", 60000, 'ROOMBA_Update($_IPS[\'TARGET\']);');
+		$this->RegisterTimer("UpdateTimer", 0, 'ROOMBA_Update($_IPS[\'TARGET\']);');
 	
 		//Variablenprofile
 		//Bin
@@ -73,20 +80,70 @@ class Roomba extends IPSModule {
 			IPS_SetVariableProfileAssociation("ROOMBA.Control", 4, $this->Translate("pause"), "", -1);
 			IPS_SetVariableProfileAssociation("ROOMBA.Control", 5, $this->Translate("resume"), "", -1);
 		}
+
+		//Lock
+		if(!IPS_VariableProfileExists("ROOMBA.Lock")) {
+			IPS_CreateVariableProfile("ROOMBA.Lock", 0);
+			IPS_SetVariableProfileIcon("ROOMBA.Lock", "Lock");
+			IPS_SetVariableProfileAssociation("ROOMBA.Lock", True, $this->Translate("unlocked"), "LockOpen", 0x00FF00);
+			IPS_SetVariableProfileAssociation("ROOMBA.Lock", False, $this->Translate("locked"), "LockClosed", 0xFF0000);
+		}
 	
-		$batPct = $this->RegisterVariableInteger("BatPct", $this->Translate("Battery"), "~Battery.100");
-		$bin = $this->RegisterVariableInteger("Bin", $this->Translate("Bin"), "ROOMBA.Bin");
-		$cleanMissionStatus = $this->RegisterVariableInteger("CleanMissionStatus", $this->Translate("Mission"), "ROOMBA.MissionState");
-		$state = $this->RegisterVariableInteger("State", $this->Translate("State"), "ROOMBA.State");
+		$this->RegisterVariableInteger("BatPct", $this->Translate("Battery"), "~Battery.100");
+		$this->RegisterVariableInteger("Bin", $this->Translate("Bin"), "ROOMBA.Bin");
+		$this->RegisterVariableInteger("CleanMissionStatus", $this->Translate("Mission"), "ROOMBA.MissionState");
+		$this->RegisterVariableInteger("State", $this->Translate("State"), "ROOMBA.State");
 
 		$this->RegisterVariableInteger("Control", $this->Translate("Control"), "ROOMBA.Control");
 		$this->EnableAction("Control");
+
+		$lastAutostart = $this->RegisterVariableInteger("LastAutostart", $this->Translate("last Autostart"));
+		$cbsVar = $this->RegisterVariableBoolean("CleanBySchedule", $this->Translate("Clean by Schedule"), "ROOMBA.Lock");
+
+		IPS_SetHidden($lastAutostart, true);
+		IPS_SetHidden($cbsVar, true);
+
+		//Zeitplan erstellen
+		if(IPS_GetEventIDByName($this->Translate("Schedule"), $this->insId) === false){
+			$evt = IPS_CreateEvent(2);
+			IPS_SetName($evt, $this->Translate("Schedule"))
+			IPS_SetParent($evt, $this->insId);
+			IPS_SetEventScheduleAction($evt, 1, $this->Translate("unlocked"), 0x00FF00, "SetVariableBoolean($cbsVar, true);");
+			IPS_SetEventScheduleAction($evt, 2, $this->Translate("locked"), 0xFF0000, "SetVariableBoolean($cbsVar, false);");
+			IPS_SetEventScheduleGroup($evt, 1, 1);
+			IPS_SetEventScheduleGroup($evt, 2, 2);
+			IPS_SetEventScheduleGroup($evt, 3, 4);
+			IPS_SetEventScheduleGroup($evt, 4, 8);
+			IPS_SetEventScheduleGroup($evt, 5, 16);
+			IPS_SetEventScheduleGroup($evt, 6, 32);
+			IPS_SetEventScheduleGroup($evt, 7, 64);
+			IPS_SetEventScheduleGroupPoint($evt, 1, 1, 8, 0, 0, 1);
+			IPS_SetEventScheduleGroupPoint($evt, 1, 2, 18, 0, 0, 2);
+			IPS_SetEventScheduleGroupPoint($evt, 2, 1, 8, 0, 0, 1);
+			IPS_SetEventScheduleGroupPoint($evt, 2, 2, 18, 0, 0, 2);
+			IPS_SetEventScheduleGroupPoint($evt, 3, 1, 8, 0, 0, 1);
+			IPS_SetEventScheduleGroupPoint($evt, 3, 2, 18, 0, 0, 2);
+			IPS_SetEventScheduleGroupPoint($evt, 4, 1, 8, 0, 0, 1);
+			IPS_SetEventScheduleGroupPoint($evt, 4, 2, 18, 0, 0, 2);
+			IPS_SetEventScheduleGroupPoint($evt, 5, 1, 8, 0, 0, 1);
+			IPS_SetEventScheduleGroupPoint($evt, 5, 2, 18, 0, 0, 2);
+			IPS_SetEventScheduleGroupPoint($evt, 6, 1, 8, 0, 0, 1);
+			IPS_SetEventScheduleGroupPoint($evt, 6, 2, 18, 0, 0, 2);
+			IPS_SetEventScheduleGroupPoint($evt, 7, 1, 8, 0, 0, 1);
+			IPS_SetEventScheduleGroupPoint($evt, 7, 2, 18, 0, 0, 2);
+		}
 	}
 
 	// Überschreibt die intere IPS_ApplyChanges($id) Funktion
 	public function ApplyChanges() {
 		// Diese Zeile nicht löschen
 		parent::ApplyChanges();
+
+		if($this->ReadPropertyBoolean("AutomaticUpdate")){
+			$this->SetTimerInterval("UpdateTimer", $this->ReadPropertyInteger("UpdateInterval") * 60000);
+		}else{
+			$this->SetTimerInterval("UpdateTimer", 0);
+		}
 	}
 
 	public function RequestAction($Ident, $Value) {
@@ -120,6 +177,38 @@ class Roomba extends IPSModule {
 		}
 	}
 
+	public function GetConfigurationForm(){
+		if($this->ReadPropertyBoolean('AutomaticUpdate')){
+			return '{
+				"elements":
+				[
+					{ "type": "ValidationTextBox", "name": "Address", "caption": "Address" },
+					{ "type": "ValidationTextBox", "name": "Username", "caption": "Username" },
+					{ "type": "ValidationTextBox", "name": "Password", "caption": "Password" },
+					{ "type": "Label", "label": "" },
+					{ "type": "CheckBox", "name": "AutomaticUpdate", "caption": "Automatic Update" },
+					{ "type": "IntervalBox", "name": "UpdateInterval", "caption": "Minutes" },
+					{ "type": "Label", "label": "" },
+					{ "type": "Label", "label": "TimeBetweenMission" },
+					{ "type": "IntervalBox", "name": "TimeBetweenMission", "caption": "Hours" },
+					{ "type": "Label", "label": "" },
+					{ "type": "SelectVariable", "name": "PresenceVariable", "caption": "PresenceVariable" }
+				]
+			}';
+		}else{
+			return '{
+				"elements":
+				[
+					{ "type": "ValidationTextBox", "name": "Address", "caption": "Address" },
+					{ "type": "ValidationTextBox", "name": "Username", "caption": "Username" },
+					{ "type": "ValidationTextBox", "name": "Password", "caption": "Password" },
+					{ "type": "Label", "label": "" },
+					{ "type": "CheckBox", "name": "AutomaticUpdate", "caption": "Automatic Update" }
+				]
+			}';
+		}
+	}
+
 	private function Connect($needValues) {
 		$this->roomba = new RoombaConnector($this->ReadPropertyString('Address'), $this->ReadPropertyString('Username'), $this->ReadPropertyString('Password'), $needValues);
 	}
@@ -129,8 +218,8 @@ class Roomba extends IPSModule {
 	}
 
 	private function CheckMissionStatus(){
-		if($roomba->ContainsValue('cleanMissionStatus')){
-			switch($roomba->GetValue('cleanMissionStatus')->phase){
+		if($this->roomba->ContainsValue('cleanMissionStatus')){
+			switch($this->roomba->GetValue('cleanMissionStatus')->phase){
 				case 'stop':
 					SetValueInteger($this->GetIDForIdent("CleanMissionStatus"), 1);
 					break;
@@ -148,7 +237,7 @@ class Roomba extends IPSModule {
 					SetValueInteger($this->GetIDForIdent("CleanMissionStatus"), 0);
 					break;
 			}
-			SetValueInteger($this->GetIDForIdent("State"), $roomba->GetValue('cleanMissionStatus')->notReady);
+			SetValueInteger($this->GetIDForIdent("State"), $this->roomba->GetValue('cleanMissionStatus')->notReady);
 		}
 	}
 
@@ -169,15 +258,33 @@ class Roomba extends IPSModule {
 				'dock'
 			]);
 
+			$presence = true;
+			$presenceId = $this->ReadPropertyString('PresenceVariable');
+			if($presenceId !== "" && IPS_VariableExists($presenceId)){
+				$presence = GetValueBoolean($presenceId);
+			}
+
+			//Abwesend & freigabe zur Reinigung & Roomba ist bereit & Reinigung läuft noch nicht & letzte Reinigung ist min 12 Std. her
+			if(!$presence AND
+				GetValueBoolean($this->GetIDForIdent('CleanBySchedule')) AND
+				GetValueInteger($this->GetIDForIdent('State')) == 0 AND
+				(GetValueInteger($this->GetIDForIdent('CleanMissionStatus')) == 1 OR GetValueInteger($this->GetIDForIdent('CleanMissionStatus')) == 2) AND
+				(GetValueInteger($this->GetIDForIdent('LastAutostart')) + ($this->ReadPropertyInteger('TimeBetweenMission') * 3600)) < time()){
+				//Zeit zwischen Reinigung min. Stunden x 3600 Sek Sek
+		
+				$roomba->Start();
+				SetValueInteger($this->GetIDForIdent('LastAutostart'), time());
+			}
+
 			$this->roomba->loop();
 
-			if($roomba->ContainsValue('batPct')){
-				SetValueInteger($this->GetIDForIdent("BatPct"), $roomba->GetValue('batPct'));
+			if($this->roomba->ContainsValue('batPct')){
+				SetValueInteger($this->GetIDForIdent("BatPct"), $this->roomba->GetValue('batPct'));
 			}
 			
-			if($roomba->ContainsValue('bin')){
-				if($roomba->GetValue('bin')->present){
-					if($roomba->GetValue('bin')->full){
+			if($this->roomba->ContainsValue('bin')){
+				if($this->roomba->GetValue('bin')->present){
+					if($this->roomba->GetValue('bin')->full){
 						SetValueInteger($this->GetIDForIdent("Bin"), 2);
 					}else{
 						SetValueInteger($this->GetIDForIdent("Bin"), 1);
@@ -188,7 +295,6 @@ class Roomba extends IPSModule {
 			}
 			
 			$this->CheckMissionStatus();
-
 			$this->Disconnect();
 		}finally{
 			SetValueInteger($this->GetIDForIdent("Control"), 0);
@@ -198,13 +304,9 @@ class Roomba extends IPSModule {
 	public function Dock() {
 		try{
 			$this->Connect(['cleanMissionStatus']);
-
 			$this->roomba->Dock();
-
 			$this->roomba->loop();
-			
 			$this->CheckMissionStatus();
-
 			$this->Disconnect();
 		}finally{
 			SetValueInteger($this->GetIDForIdent("Control"), 0);
@@ -214,13 +316,9 @@ class Roomba extends IPSModule {
 	public function Start() {
 		try{
 			$this->Connect(['cleanMissionStatus']);
-
 			$this->roomba->Start();
-
 			$this->roomba->loop();
-			
 			$this->CheckMissionStatus();
-
 			$this->Disconnect();
 		}finally{
 			SetValueInteger($this->GetIDForIdent("Control"), 0);
@@ -230,13 +328,9 @@ class Roomba extends IPSModule {
 	public function Stop() {
 		try{
 			$this->Connect(['cleanMissionStatus']);
-
 			$this->roomba->Stop();
-
 			$this->roomba->loop();
-			
 			$this->CheckMissionStatus();
-
 			$this->Disconnect();
 		}finally{
 			SetValueInteger($this->GetIDForIdent("Control"), 0);
@@ -246,13 +340,9 @@ class Roomba extends IPSModule {
 	public function Pause() {
 		try{
 			$this->Connect(['cleanMissionStatus']);
-
 			$this->roomba->Pause();
-
 			$this->roomba->loop();
-			
 			$this->CheckMissionStatus();
-
 			$this->Disconnect();
 		}finally{
 			SetValueInteger($this->GetIDForIdent("Control"), 0);
@@ -262,13 +352,9 @@ class Roomba extends IPSModule {
 	public function Resume() {
 		try{
 			$this->Connect(['cleanMissionStatus']);
-
 			$this->roomba->Resume();
-
 			$this->roomba->loop();
-			
 			$this->CheckMissionStatus();
-
 			$this->Disconnect();
 		}finally{
 			SetValueInteger($this->GetIDForIdent("Control"), 0);

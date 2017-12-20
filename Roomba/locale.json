@@ -21,7 +21,20 @@
                   "start": "start",
                   "stop": "stoppen",
                   "pause": "pausieren",
-                  "resume": "fortsetzen"
+                  "resume": "fortsetzen",
+                  "last Autostart": "letzter Autostart",
+                  "locked": "gesperrt",
+                  "unlocked": "freigegeben",
+                  "Clean by Schedule": "Reinigung nach Zeitplan",
+                  "Schedule": "Zeitplan",
+                  "Address": "Adresse",
+                  "Username": "Benutzername",
+                  "Password": "Passwort",
+                  "Automatic Update": "Automatisches Update",
+                  "Minutes": "Minuten",
+                  "Hours": "Stunden",
+                  "TimeBetweenMission": "Mindestabstand zwischen Reinigung",
+                  "PresenceVariable": "Präsenz Variable"
 		}
 	}
 }
