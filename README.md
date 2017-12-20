@@ -10,5 +10,6 @@ Current Features:
 
 For Username and Password of Roomba you should look at https://github.com/koalazak/dorita980. Maybe I integrate it later directly into the Module.
 
-Copyright Information:
-MQTT Library: Copyright (c) 2013 - 2016, sskaje (https://sskaje.me/)
+__Copyright Information__
+
+__MQTT Library__: Copyright (c) 2013 - 2016, sskaje (https://sskaje.me/)
