@@ -31,7 +31,7 @@ class Roomba extends IPSModule {
 		$this->RegisterPropertyInteger("UpdateInterval", 5);
 		$this->RegisterPropertyInteger("TimeBetweenMission", 36);
 
-		$this->RegisterPropertyString("PresenceVariable", "");
+		$this->RegisterPropertyInteger("PresenceVariable", "");
 	
 		//Timer
 		$this->RegisterTimer("UpdateTimer", 0, 'ROOMBA_Update($_IPS[\'TARGET\']);');
@@ -267,8 +267,8 @@ class Roomba extends IPSModule {
 			]);
 
 			$presence = false;
-			$presenceId = $this->ReadPropertyString('PresenceVariable');
-			if($presenceId !== "" && IPS_VariableExists($presenceId)){
+			$presenceId = $this->ReadPropertyInteger('PresenceVariable');
+			if($presenceId !== 0 && IPS_VariableExists($presenceId)){
 				$presence = GetValueBoolean($presenceId);
 			}
 
