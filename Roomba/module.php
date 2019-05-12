@@ -31,7 +31,7 @@ class Roomba extends IPSModule {
 		$this->RegisterPropertyInteger("UpdateInterval", 5);
 		$this->RegisterPropertyInteger("TimeBetweenMission", 36);
 
-		$this->RegisterPropertyInteger("PresenceVariable", "");
+		$this->RegisterPropertyInteger("PresenceVariable", 0);
 	
 		//Timer
 		$this->RegisterTimer("UpdateTimer", 0, 'ROOMBA_Update($_IPS[\'TARGET\']);');
