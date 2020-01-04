@@ -218,11 +218,45 @@ class Roomba extends IPSModule {
 	}
 
 	private function Connect($needValues) {
-		$this->roomba = new RoombaConnector($this->ReadPropertyString('Address'), $this->ReadPropertyString('Username'), $this->ReadPropertyString('Password'), $needValues);
+		set_error_handler(array($this, "HandleError"));
+		try{
+			$this->roomba = new RoombaConnector($this->ReadPropertyString('Address'), $this->ReadPropertyString('Username'), $this->ReadPropertyString('Password'), $needValues);
+		}finally{
+			restore_error_handler();
+		}
 	}
 
 	private function Disconnect(){
 		$this->roomba->disconnect();
+	}
+
+	private function HandleError($errno, $errstr, $errfile, $errline){
+		if (!(error_reporting() & $errno)) {
+			// This error code is not included in error_reporting, so let it fall
+			// through to the standard PHP error handler
+			return false;
+		}
+	
+		switch ($errno) {
+		case E_USER_ERROR:
+			$this->SendDebug('Connect', "ERROR [$errno] $errstr - Fatal error on line $errline in file $errfile", 0);
+			break;
+	
+		case E_USER_WARNING:
+			$this->SendDebug('Connect', "WARNING [$errno] $errstr - on line $errline in file $errfile", 0);
+			break;
+	
+		case E_USER_NOTICE:
+			$this->SendDebug('Connect', "NOTICE [$errno] $errstr - on line $errline in file $errfile", 0);
+			break;
+	
+		default:
+			$this->SendDebug('Connect', "UNKNOWN [$errno] $errstr - on line $errline in file $errfile", 0);
+			break;
+		}
+	
+		/* Don't execute PHP internal error handler */
+		return true;
 	}
 
 	private function CheckMissionStatus(){
