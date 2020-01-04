@@ -114,7 +114,7 @@ class SocketClient
             $this->address,
             $errno,
             $errstr,
-            60,
+            5,
             STREAM_CLIENT_CONNECT,
             $context
         );
