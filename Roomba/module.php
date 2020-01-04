@@ -217,15 +217,21 @@ class Roomba extends IPSModule {
 		}
 	}
 
-	private function Connect($needValues) {
+	private function Connect($needValues, $exceptionOnError = true) {
 		set_error_handler(array($this, "HandleError"));
 		try{
 			$this->roomba = new RoombaConnector($this->ReadPropertyString('Address'), $this->ReadPropertyString('Username'), $this->ReadPropertyString('Password'), $needValues);
 		}catch(sskaje\mqtt\Exception\ConnectError $ex){
 			$this->LogMessage("Failed to connect to Roomba ".$ex->getMessage(), KL_WARNING);
+			if($exceptionOnError){
+				throw $ex;
+			}else{
+				return false;
+			}
 		}finally{
 			restore_error_handler();
 		}
+		return true;
 	}
 
 	private function Disconnect(){
@@ -294,13 +300,13 @@ class Roomba extends IPSModule {
 	*/
 	public function Update() {
 		try{
-			$this->Connect([
+			if(!$this->Connect([
 				'batPct',
 				'bin',
 				'cleanMissionStatus',
 				'pose',
 				'dock'
-			]);
+			], false)){ return; };
 
 			$presence = false;
 			$presenceId = $this->ReadPropertyInteger('PresenceVariable');
