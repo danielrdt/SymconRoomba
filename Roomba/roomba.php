@@ -5,6 +5,7 @@ require_once(__DIR__.'/../libs/mqtt/CMDStore.php');
 require_once(__DIR__.'/../libs/mqtt/Utility.php');
 require_once(__DIR__.'/../libs/mqtt/Debug.php');
 require_once(__DIR__.'/../libs/mqtt/Exception.php');
+require_once(__DIR__.'/../libs/mqtt/Exception/ConnectError.php');
 require_once(__DIR__.'/../libs/mqtt/Exception/NetworkError.php');
 require_once(__DIR__.'/../libs/mqtt/MessageHandler.php');
 require_once(__DIR__.'/../libs/mqtt/Message.php');

@@ -221,6 +221,8 @@ class Roomba extends IPSModule {
 		set_error_handler(array($this, "HandleError"));
 		try{
 			$this->roomba = new RoombaConnector($this->ReadPropertyString('Address'), $this->ReadPropertyString('Username'), $this->ReadPropertyString('Password'), $needValues);
+		}catch(sskaje\mqtt\Exception\ConnectError $ex){
+			$this->LogMessage("Failed to connect to Roomba ".$ex->getMessage(), KL_WARNING);
 		}finally{
 			restore_error_handler();
 		}
