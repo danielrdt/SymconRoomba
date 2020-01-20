@@ -7,8 +7,12 @@
     [
         "Roomba 980"
     ],  
-    "parentRequirements": [],
+    "parentRequirements": [
+        "{97475B04-67C3-A74D-C970-E9409B0EFA1D}"
+    ],
     "childRequirements": [],
-    "implemented": [],
+    "implemented": [
+        "{DBDA9DF7-5D04-F49D-370A-2B9153D00D9B}"
+    ],
     "prefix": "ROOMBA"
 }
