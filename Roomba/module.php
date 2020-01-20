@@ -185,11 +185,12 @@ class Roomba extends IPSModule {
 
 	public function ReceiveData($JSONString){
 		$data = json_decode($JSONString);
-		$jsonData = utf8_decode($data->Buffer);
+		$buffer = utf8_decode($data->Buffer);
+		$jsonData = json_decode($buffer);
 
 		$this->SendDebug(__FUNCTION__, print_r($jsonData, true), 0);
 
-		if($jsonData->SENDER !== 'MQTT_GET_PAYLOAD') return; //Just process payload
+		if(!$jsonData->SENDER == 'MQTT_GET_PAYLOAD') return; //Just process payload
 
 		$payload = json_decode($jsonData->Payload);
 
