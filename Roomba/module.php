@@ -196,7 +196,7 @@ class Roomba extends IPSModule {
 
 			case 'MQTT_CONNECT':
 				//For Roomba we do not need to subscribe anything
-			break;
+			return;
 
 			default:
 			return;
