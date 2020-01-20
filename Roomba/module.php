@@ -190,7 +190,29 @@ class Roomba extends IPSModule {
 
 		$this->SendDebug(__FUNCTION__, print_r($jsonData, true), 0);
 
-		if($jsonData->SENDER !== 'MQTT_GET_PAYLOAD') return; //Just process payload
+		switch($jsonData->SENDER){
+			case 'MQTT_GET_PAYLOAD':
+			break;
+
+			case 'MQTT_CONNECT':
+				$jsonPublish = [
+					'Topic' 	=> 'cleanMissionStatus'
+				];
+		
+				$json = json_encode([
+					'DataID' => '{97475B04-67C3-A74D-C970-E9409B0EFA1D}', //MQTT Client
+					'Buffer' => utf8_encode($jsonPublish)]);
+				if ($this->HasActiveParent()) {
+					$res = parent::SendDataToParent($json);
+				} else {
+					$this->SendDebug(__FUNCTION__, 'No active Parent', 0);
+				}
+			break;
+
+			default:
+			return;
+		}
+
 		$this->SendDebug(__FUNCTION__, 'Got payload', 0);
 
 		$payload = json_decode($jsonData->Payload);
