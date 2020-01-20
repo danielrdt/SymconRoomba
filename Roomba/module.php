@@ -195,14 +195,14 @@ class Roomba extends IPSModule {
 
 		$payload = json_decode($jsonData->Payload);
 		$this->SendDebug(__FUNCTION__, 'Decoded payload', 0);
-		if($payload->state){
+		if(isset($payload->state)){
 			$this->SendDebug(__FUNCTION__, 'Found state', 0);
-			if($payload->state->reported){
+			if(isset($payload->state->reported)){
 				$reported = $payload->state->reported;
 
-				if($reported->batPct) SetValueInteger($this->GetIDForIdent("BatPct"), $reported->batPct);
+				if(isset($reported->batPct)) SetValueInteger($this->GetIDForIdent("BatPct"), $reported->batPct);
 
-				if($reported->bin){
+				if(isset($reported->bin)){
 					if($reported->bin->present){
 						if($reported->bin->full){
 							SetValueInteger($this->GetIDForIdent("Bin"), 2);
@@ -214,7 +214,7 @@ class Roomba extends IPSModule {
 					}
 				}
 
-				if($reported->cleanMissionStatus){
+				if(isset($reported->cleanMissionStatus)){
 					$missionState = $reported->cleanMissionStatus;
 					switch($missionState->phase){
 						case 'stop':
