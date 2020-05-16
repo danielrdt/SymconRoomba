@@ -287,7 +287,7 @@ class Roomba extends IPSModule {
 		$jsonPublish = [
 			'Topic' 	=> $topic,
 			'Payload'	=> json_encode($cmd),
-			'Retain'	=> 0
+			'Retain'	=> false
 		];
 
 		$json = json_encode([
