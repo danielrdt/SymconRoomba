@@ -1,10 +1,7 @@
 <?
-require_once('roomba.php');
-
 // Klassendefinition
 class Roomba extends IPSModule {
 
-	private $roomba = NULL;
 	private $insId = 0;
 
 	// Der Konstruktor des Moduls
@@ -21,21 +18,16 @@ class Roomba extends IPSModule {
 		// Diese Zeile nicht löschen.
 		parent::Create();
 
+		$this->RequireParent('{EE0D345A-CF31-428A-A613-33CE98E752DD}');    //MQTT Client
+
 		//These lines are parsed on Symcon Startup or Instance creation
 		//You cannot use variables here. Just static values.
-		$this->RegisterPropertyString("Address", "");
-		$this->RegisterPropertyString("Username", "");
-		$this->RegisterPropertyString("Password", "");
-
-		$this->RegisterPropertyBoolean("AutomaticUpdate", False);
-		$this->RegisterPropertyInteger("UpdateInterval", 5);
 		$this->RegisterPropertyInteger("TimeBetweenMission", 36);
-
 		$this->RegisterPropertyInteger("PresenceVariable", 0);
 	
 		//Timer
-		$this->RegisterTimer("UpdateTimer", 0, 'ROOMBA_Update($_IPS[\'TARGET\']);');
-	
+		$this->RegisterTimer("UpdateTimer", 60000, 'ROOMBA_CheckStart($_IPS[\'TARGET\']);');
+
 		//Variablenprofile
 		//Bin
 		if(!IPS_VariableProfileExists("ROOMBA.Bin")) {
@@ -146,12 +138,6 @@ class Roomba extends IPSModule {
 	public function ApplyChanges() {
 		// Diese Zeile nicht löschen
 		parent::ApplyChanges();
-
-		if($this->ReadPropertyBoolean("AutomaticUpdate")){
-			$this->SetTimerInterval("UpdateTimer", $this->ReadPropertyInteger("UpdateInterval") * 60000);
-		}else{
-			$this->SetTimerInterval("UpdateTimer", 0);
-		}
 	}
 
 	public function RequestAction($Ident, $Value) {
@@ -186,128 +172,84 @@ class Roomba extends IPSModule {
 	}
 
 	public function GetConfigurationForm(){
-		if($this->ReadPropertyBoolean('AutomaticUpdate')){
-			return '{
-				"elements":
-				[
-					{ "type": "ValidationTextBox", "name": "Address", "caption": "Address" },
-					{ "type": "ValidationTextBox", "name": "Username", "caption": "Username" },
-					{ "type": "ValidationTextBox", "name": "Password", "caption": "Password" },
-					{ "type": "Label", "label": "" },
-					{ "type": "CheckBox", "name": "AutomaticUpdate", "caption": "Automatic Update" },
-					{ "type": "IntervalBox", "name": "UpdateInterval", "caption": "Minutes" },
-					{ "type": "Label", "label": "" },
-					{ "type": "Label", "label": "TimeBetweenMission" },
-					{ "type": "IntervalBox", "name": "TimeBetweenMission", "caption": "Hours" },
-					{ "type": "Label", "label": "" },
-					{ "type": "SelectVariable", "name": "PresenceVariable", "caption": "PresenceVariable" }
-				]
-			}';
-		}else{
-			return '{
-				"elements":
-				[
-					{ "type": "ValidationTextBox", "name": "Address", "caption": "Address" },
-					{ "type": "ValidationTextBox", "name": "Username", "caption": "Username" },
-					{ "type": "ValidationTextBox", "name": "Password", "caption": "Password" },
-					{ "type": "Label", "label": "" },
-					{ "type": "CheckBox", "name": "AutomaticUpdate", "caption": "Automatic Update" }
-				]
-			}';
-		}
+		return '{
+			"elements":
+			[
+				{ "type": "Label", "label": "TimeBetweenMission" },
+				{ "type": "IntervalBox", "name": "TimeBetweenMission", "caption": "Hours" },
+				{ "type": "Label", "label": "" },
+				{ "type": "SelectVariable", "name": "PresenceVariable", "caption": "PresenceVariable" }
+			]
+		}';
 	}
 
-	private function Connect($needValues, $exceptionOnError = true) {
-		set_error_handler(array($this, "HandleError"));
-		try{
-			$this->roomba = new RoombaConnector($this->ReadPropertyString('Address'), $this->ReadPropertyString('Username'), $this->ReadPropertyString('Password'), $needValues);
-		}catch(sskaje\mqtt\Exception\ConnectError $ex){
-			$this->LogMessage("Failed to connect to Roomba ".$ex->getMessage(), KL_WARNING);
-			if($exceptionOnError){
-				throw $ex;
-			}else{
-				return false;
+	public function ReceiveData($JSONString){
+		$data = json_decode($JSONString);
+		$buffer = utf8_decode($data->Buffer);
+		$jsonData = json_decode($buffer);
+
+		$this->SendDebug(__FUNCTION__, print_r($jsonData, true), 0);
+
+		switch($jsonData->SENDER){
+			case 'MQTT_GET_PAYLOAD':
+			break;
+
+			case 'MQTT_CONNECT':
+				//For Roomba we do not need to subscribe anything
+			return;
+
+			default:
+			return;
+		}
+
+		$payload = json_decode($jsonData->Payload);
+		if(isset($payload->state)){
+			if(isset($payload->state->reported)){
+				$reported = $payload->state->reported;
+
+				if(isset($reported->batPct)) SetValueInteger($this->GetIDForIdent("BatPct"), $reported->batPct);
+
+				if(isset($reported->bin)){
+					if($reported->bin->present){
+						if($reported->bin->full){
+							SetValueInteger($this->GetIDForIdent("Bin"), 2);
+						}else{
+							SetValueInteger($this->GetIDForIdent("Bin"), 1);
+						}
+					}else{
+						SetValueInteger($this->GetIDForIdent("Bin"), 0);
+					}
+				}
+
+				if(isset($reported->cleanMissionStatus)){
+					$missionState = $reported->cleanMissionStatus;
+					switch($missionState->phase){
+						case 'stop':
+							SetValueInteger($this->GetIDForIdent("CleanMissionStatus"), 1);
+							break;
+						case 'charge':
+							SetValueInteger($this->GetIDForIdent("CleanMissionStatus"), 2);
+							break;
+						case 'run':
+							SetValueInteger($this->GetIDForIdent("CleanMissionStatus"), 3);
+							break;
+						case 'hmUsrDock':
+						case 'hmPostMsn':
+							SetValueInteger($this->GetIDForIdent("CleanMissionStatus"), 4);
+							break;
+						default:
+							SetValueInteger($this->GetIDForIdent("CleanMissionStatus"), 0);
+							break;
+					}
+
+					SetValueInteger($this->GetIDForIdent("State"), $missionState->notReady);
+				}
 			}
-		}finally{
-			restore_error_handler();
-		}
-		return true;
-	}
-
-	private function Disconnect(){
-		$this->roomba->disconnect();
-	}
-
-	public function HandleError($errno, $errstr, $errfile, $errline){
-		if (!(error_reporting() & $errno)) {
-			// This error code is not included in error_reporting, so let it fall
-			// through to the standard PHP error handler
-			return false;
-		}
-	
-		switch ($errno) {
-		case E_USER_ERROR:
-			$this->SendDebug('Connect', "ERROR [$errno] $errstr - Fatal error on line $errline in file $errfile", 0);
-			break;
-	
-		case E_USER_WARNING:
-			$this->SendDebug('Connect', "WARNING [$errno] $errstr - on line $errline in file $errfile", 0);
-			break;
-	
-		case E_USER_NOTICE:
-			$this->SendDebug('Connect', "NOTICE [$errno] $errstr - on line $errline in file $errfile", 0);
-			break;
-	
-		default:
-			$this->SendDebug('Connect', "UNKNOWN [$errno] $errstr - on line $errline in file $errfile", 0);
-			break;
-		}
-	
-		/* Don't execute PHP internal error handler */
-		return true;
-	}
-
-	private function CheckMissionStatus(){
-		if($this->roomba->ContainsValue('cleanMissionStatus')){
-			switch($this->roomba->GetValue('cleanMissionStatus')->phase){
-				case 'stop':
-					SetValueInteger($this->GetIDForIdent("CleanMissionStatus"), 1);
-					break;
-				case 'charge':
-					SetValueInteger($this->GetIDForIdent("CleanMissionStatus"), 2);
-					break;
-				case 'run':
-					SetValueInteger($this->GetIDForIdent("CleanMissionStatus"), 3);
-					break;
-				case 'hmUsrDock':
-				case 'hmPostMsn':
-					SetValueInteger($this->GetIDForIdent("CleanMissionStatus"), 4);
-					break;
-				default:
-					SetValueInteger($this->GetIDForIdent("CleanMissionStatus"), 0);
-					break;
-			}
-			SetValueInteger($this->GetIDForIdent("State"), $this->roomba->GetValue('cleanMissionStatus')->notReady);
 		}
 	}
 
-	/**
-	* Die folgenden Funktionen stehen automatisch zur Verfügung, wenn das Modul über die "Module Control" eingefügt wurden.
-	* Die Funktionen werden, mit dem selbst eingerichteten Prefix, in PHP und JSON-RPC wiefolgt zur Verfügung gestellt:
-	*
-	* ABC_MeineErsteEigeneFunktion($id);
-	*
-	*/
-	public function Update() {
+	public function CheckStart() {
 		try{
-			if(!$this->Connect([
-				'batPct',
-				'bin',
-				'cleanMissionStatus',
-				'pose',
-				'dock'
-			], false)){ return; };
-
 			$presence = false;
 			$presenceId = $this->ReadPropertyInteger('PresenceVariable');
 			if($presenceId !== 0 && IPS_VariableExists($presenceId)){
@@ -322,42 +264,45 @@ class Roomba extends IPSModule {
 				(GetValueInteger($this->GetIDForIdent('LastAutostart')) + ($this->ReadPropertyInteger('TimeBetweenMission') * 3600)) < time()){
 				//Zeit zwischen Reinigung min. Stunden x 3600 Sek Sek
 		
-				$this->roomba->Start();
+				$this->Start();
 				SetValueInteger($this->GetIDForIdent('LastAutostart'), time());
 			}
-
-			$this->roomba->loop();
-
-			if($this->roomba->ContainsValue('batPct')){
-				SetValueInteger($this->GetIDForIdent("BatPct"), $this->roomba->GetValue('batPct'));
-			}
-			
-			if($this->roomba->ContainsValue('bin')){
-				if($this->roomba->GetValue('bin')->present){
-					if($this->roomba->GetValue('bin')->full){
-						SetValueInteger($this->GetIDForIdent("Bin"), 2);
-					}else{
-						SetValueInteger($this->GetIDForIdent("Bin"), 1);
-					}
-				}else{
-					SetValueInteger($this->GetIDForIdent("Bin"), 0);
-				}
-			}
-			
-			$this->CheckMissionStatus();
-			$this->Disconnect();
 		}finally{
-			SetValueInteger($this->GetIDForIdent("Control"), 0);
+			if(GetValueInteger($this->GetIDForIdent('Control')) > 0) SetValueInteger($this->GetIDForIdent("Control"), 0);
 		}
 	}
 	
+	private function _apiCall ($topic, $command) {
+		$cmd = [
+				'command' => $command, 
+				'time' => time(), 
+				'initiator' => 'localApp'
+				];
+	    if ($topic === 'delta') {
+			$cmd = [
+					'state' => $command
+					];
+	    }
+		
+		$jsonPublish = [
+			'Topic' 	=> $topic,
+			'Payload'	=> json_encode($cmd),
+			'Retain'	=> false
+		];
+
+		$json = json_encode([
+			'DataID' => '{97475B04-67C3-A74D-C970-E9409B0EFA1D}', //MQTT Client
+            'Buffer' => utf8_encode(json_encode($jsonPublish))]);
+        if ($this->HasActiveParent()) {
+            $res = parent::SendDataToParent($json);
+        } else {
+            $this->SendDebug(__FUNCTION__, 'No active Parent', 0);
+        }
+	}
+
 	public function Dock() {
 		try{
-			$this->Connect(['cleanMissionStatus']);
-			$this->roomba->Dock();
-			$this->roomba->loop();
-			$this->CheckMissionStatus();
-			$this->Disconnect();
+			$this->_apiCall('cmd', 'dock');
 		}finally{
 			SetValueInteger($this->GetIDForIdent("Control"), 0);
 		}
@@ -365,11 +310,7 @@ class Roomba extends IPSModule {
 	
 	public function Start() {
 		try{
-			$this->Connect(['cleanMissionStatus']);
-			$this->roomba->Start();
-			$this->roomba->loop();
-			$this->CheckMissionStatus();
-			$this->Disconnect();
+			$this->_apiCall('cmd', 'start');
 		}finally{
 			SetValueInteger($this->GetIDForIdent("Control"), 0);
 		}
@@ -377,11 +318,7 @@ class Roomba extends IPSModule {
 	
 	public function Stop() {
 		try{
-			$this->Connect(['cleanMissionStatus']);
-			$this->roomba->Stop();
-			$this->roomba->loop();
-			$this->CheckMissionStatus();
-			$this->Disconnect();
+			$this->_apiCall('cmd', 'stop');
 		}finally{
 			SetValueInteger($this->GetIDForIdent("Control"), 0);
 		}
@@ -389,11 +326,7 @@ class Roomba extends IPSModule {
 	
 	public function Pause() {
 		try{
-			$this->Connect(['cleanMissionStatus']);
-			$this->roomba->Pause();
-			$this->roomba->loop();
-			$this->CheckMissionStatus();
-			$this->Disconnect();
+			$this->_apiCall('cmd', 'pause');
 		}finally{
 			SetValueInteger($this->GetIDForIdent("Control"), 0);
 		}
@@ -401,11 +334,7 @@ class Roomba extends IPSModule {
 	
 	public function Resume() {
 		try{
-			$this->Connect(['cleanMissionStatus']);
-			$this->roomba->Resume();
-			$this->roomba->loop();
-			$this->CheckMissionStatus();
-			$this->Disconnect();
+			$this->_apiCall('cmd', 'resume');
 		}finally{
 			SetValueInteger($this->GetIDForIdent("Control"), 0);
 		}
